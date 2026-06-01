@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db-turmas:
+    image: postgres:16-alpine
+    container_name: db-turmas
+    environment:
+      POSTGRES_DB: db_turmas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_turmas:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ms-turmas:
+    build: .
+    container_name: ms-turmas
+    ports:
+      - "8082:8082"
+    depends_on:
+      db-turmas:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db-turmas
+      - DB_PORT=5432
+      - DB_NAME=db_turmas
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - MS_SOLICITACOES_URL=http://ms-solicitacoes:8081
+
+volumes:
+  pgdata_turmas:
