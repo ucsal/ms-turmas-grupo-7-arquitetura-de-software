@@ -8,20 +8,31 @@ public class Turma {
     private Long id;
     private Long disciplinaId;
     private Long professorId;
+    private Long espacoId; // FALTAVA ISSO
     private String semestre;
     private TurnoEnum turno;
     private Integer capacidadeMaxima;
     private Integer quantidadeAlunos;
     private StatusTurma status;
 
-    // Construtor padrão vazio (Obrigatório para o Hibernate)
-    public Turma() {}
+    public Turma() {
+    }
 
-    // Construtor completo para substituir o .builder()
-    public Turma(Long id, Long disciplinaId, Long professorId, String semestre, TurnoEnum turno, Integer capacidadeMaxima, Integer quantidadeAlunos, StatusTurma status) {
+    public Turma(
+            Long id,
+            Long disciplinaId,
+            Long professorId,
+            Long espacoId,
+            String semestre,
+            TurnoEnum turno,
+            Integer capacidadeMaxima,
+            Integer quantidadeAlunos,
+            StatusTurma status
+    ) {
         this.id = id;
         this.disciplinaId = disciplinaId;
         this.professorId = professorId;
+        this.espacoId = espacoId; // FALTAVA ISSO
         this.semestre = semestre;
         this.turno = turno;
         this.capacidadeMaxima = capacidadeMaxima;
@@ -29,7 +40,6 @@ public class Turma {
         this.status = status;
     }
 
-    // GETTERS E SETTERS MANUAIS (Garante que tanto .getQuantidadeAlunos() quanto .quantidadeAlunos() funcionem)
     public Long getId() { return id; }
     public Long id() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,6 +51,10 @@ public class Turma {
     public Long getProfessorId() { return professorId; }
     public Long professorId() { return professorId; }
     public void setProfessorId(Long professorId) { this.professorId = professorId; }
+
+    public Long getEspacoId() { return espacoId; }
+    public Long espacoId() { return espacoId; }
+    public void setEspacoId(Long espacoId) { this.espacoId = espacoId; }
 
     public String getSemestre() { return semestre; }
     public String semestre() { return semestre; }

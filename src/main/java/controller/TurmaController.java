@@ -12,7 +12,7 @@ import java.util.List; // Importação vital para corrigir o erro "missing type 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/turmas")
+@RequestMapping("/api/turmas")
 public class TurmaController {
 
     private final TurmaService turmaService;
@@ -60,4 +60,5 @@ public class TurmaController {
         
         return ResponseEntity.ok(response);
     }
+    
 }

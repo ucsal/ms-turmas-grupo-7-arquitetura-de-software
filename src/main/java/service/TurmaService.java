@@ -6,6 +6,7 @@ import entity.ListaEspera;
 import entity.MatriculaTurma;
 import entity.Turma;
 import entity.enums.StatusMatricula;
+import entity.enums.StatusSolicitacao;
 import entity.enums.StatusTurma;
 import entity.enums.TurnoEnum;
 import exception.ResourceNotFoundException;
@@ -50,6 +51,7 @@ public class TurmaService {
             if (sol.disciplinas() != null) {
                 for (ItemSolicitacaoResponseDTO item : sol.disciplinas()) {
                     demandasMapeadas.add(new FlatSolicitacaoDTO(
+                            sol.id(),
                             sol.alunoId(),
                             item.disciplinaId(),
                             item.prioridade(),
@@ -90,7 +92,11 @@ public class TurmaService {
                 for (Turma turma : turmasAbertas) {
                     // CORREÇÃO: Removido prefixo "get" do método da Entidade
                     if (turma.quantidadeAlunos() < 20) {
-                        efetuarMatricula(turma, dema);
+                    	efetuarMatricula(
+                    	        turma,
+                    	        dema,
+                    	        dema.solicitacaoId()
+                    	);
                         alocado = true;
                         break;
                     }
@@ -106,6 +112,7 @@ public class TurmaService {
                                 null,
                                 disciplinaId,
                                 professorId,
+                                1L, // espaço provisório
                                 dema.semestre(),
                                 turnoDefinido,
                                 20,
@@ -114,9 +121,16 @@ public class TurmaService {
                         );
 
                         novaTurma = turmaRepository.save(novaTurma);
-                        efetuarMatricula(novaTurma, dema);
+                        efetuarMatricula(
+                                novaTurma,
+                                dema,
+                                dema.solicitacaoId()
+                        );
                     } else {
-                        adicionarListaEspera(dema);
+                    	adicionarListaEspera(
+                    	        dema,
+                    	        dema.solicitacaoId()
+                    	);
                     }
                 }
             }
@@ -174,22 +188,80 @@ public class TurmaService {
 
     public List<TurmaResponseDTO> listarTurmas() {
         return turmaRepository.findAll().stream()
-                .map(t -> new TurmaResponseDTO(t.id(), t.disciplinaId(), t.professorId(), t.semestre(), t.turno(), t.capacidadeMaxima(), t.quantidadeAlunos(), t.status()))
+                .map(t -> new TurmaResponseDTO(
+                        t.id(),
+                        t.disciplinaId(),
+                        t.professorId(),
+                        t.espacoId(),
+                        t.semestre(),
+                        t.turno(),
+                        t.capacidadeMaxima(),
+                        t.quantidadeAlunos(),
+                        t.status()
+                ))
                 .collect(Collectors.toList());
     }
 
     public TurmaResponseDTO buscarPorId(Long id) {
         Turma t = turmaRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada."));
-        return new TurmaResponseDTO(t.id(), t.disciplinaId(), t.professorId(), t.semestre(), t.turno(), t.capacidadeMaxima(), t.quantidadeAlunos(), t.status());
+        return new TurmaResponseDTO(
+                t.id(),
+                t.disciplinaId(),
+                t.professorId(),
+                t.espacoId(),
+                t.semestre(),
+                t.turno(),
+                t.capacidadeMaxima(),
+                t.quantidadeAlunos(),
+                t.status()
+        );
     }
 
+    public TurmaResponseDTO atualizar(
+            Long id,
+            TurmaResponseDTO dto
+    ) {
+
+        Turma turma = turmaRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Turma não encontrada."
+                        ));
+
+        turma.setProfessorId(dto.professorId());
+        turma.setEspacoId(dto.espacoId());
+        turma.setTurno(dto.turno());
+        turma.setStatus(dto.status());
+
+        turmaRepository.save(turma);
+
+        return buscarPorId(id);
+    }
+    
+    public void excluir(Long id) {
+
+        Turma turma = turmaRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Turma não encontrada."
+                        ));
+
+        turmaRepository.delete(turma);
+    }
+    
+    
     public List<ListaEsperaResponseDTO> buscarFilaPorDisciplina(Long disciplinaId) {
         return listaEsperaRepository.findByDisciplinaIdOrderByPosicaoFilaAsc(disciplinaId).stream()
                 .map(l -> new ListaEsperaResponseDTO(l.id(), l.getDisciplinaId(), l.alunoId(), l.prioridade(), l.posicaoFila(), l.dataEntrada()))
                 .collect(Collectors.toList());
     }
 
-    private void efetuarMatricula(Turma turma, FlatSolicitacaoDTO dema) {
+    private void efetuarMatricula(
+            Turma turma,
+            FlatSolicitacaoDTO dema,
+            Long solicitacaoId
+    ) {
+
         MatriculaTurma m = new MatriculaTurma(
                 null,
                 turma.id(),
@@ -197,22 +269,60 @@ public class TurmaService {
                 dema.prioridade(),
                 LocalDateTime.now(),
                 StatusMatricula.MATRICULADO
-            );
+        );
+
         matriculaTurmaRepository.save(m);
 
-        turma.setQuantidadeAlunos(turma.quantidadeAlunos() + 1);
+        turma.setQuantidadeAlunos(
+                turma.quantidadeAlunos() + 1
+        );
+
         if (turma.quantidadeAlunos() == 20) {
             turma.setStatus(StatusTurma.FECHADA);
         }
-        turmaRepository.save(turma);
-    }
 
-    private void adicionarListaEspera(FlatSolicitacaoDTO dema) {
-        if (listaEsperaRepository.existsByDisciplinaIdAndAlunoId(dema.disciplinaId(), dema.alunoId())) {
+        turmaRepository.save(turma);
+
+        try {
+
+        	if (solicitacaoId != null) {
+
+        	    solicitacaoClient.atualizarStatus(
+        	            solicitacaoId,
+        	            StatusSolicitacao.LISTA_DE_ESPERA
+        	    );
+
+        	}
+        	
+        } catch (Exception ex) {
+
+            System.out.println(
+                    "Erro ao atualizar status da solicitação "
+                            + solicitacaoId
+            );
+
+        }
+    }
+    
+    private void adicionarListaEspera(
+            FlatSolicitacaoDTO dema,
+            Long solicitacaoId
+    ) {
+
+        if (
+                listaEsperaRepository.existsByDisciplinaIdAndAlunoId(
+                        dema.disciplinaId(),
+                        dema.alunoId()
+                )
+        ) {
             return;
         }
-        int posicao = (int) listaEsperaRepository.countByDisciplinaId(dema.disciplinaId()) + 1;
-        
+
+        int posicao =
+                (int) listaEsperaRepository.countByDisciplinaId(
+                        dema.disciplinaId()
+                ) + 1;
+
         ListaEspera l = new ListaEspera(
                 null,
                 dema.disciplinaId(),
@@ -221,8 +331,32 @@ public class TurmaService {
                 posicao,
                 dema.dataSolicitacao()
         );
+
         listaEsperaRepository.save(l);
-        reajustarFilaEspera(dema.disciplinaId());
+
+        reajustarFilaEspera(
+                dema.disciplinaId()
+        );
+
+        try {
+
+        	if (solicitacaoId != null) {
+
+        	    solicitacaoClient.atualizarStatus(
+        	            solicitacaoId,
+        	            StatusSolicitacao.VALIDADO
+        	    );
+
+        	}
+
+        } catch (Exception ex) {
+
+            System.out.println(
+                    "Erro ao atualizar status da solicitação "
+                            + solicitacaoId
+            );
+
+        }
     }
 
     private void validarQuorumMinimo(Long disciplinaId) {
@@ -244,6 +378,7 @@ public class TurmaService {
             matriculaTurmaRepository.save(m);
 
             FlatSolicitacaoDTO reAlocacao = new FlatSolicitacaoDTO(
+                    null,
                     m.alunoId(),
                     turma.disciplinaId(),
                     m.prioridade(),
@@ -251,7 +386,10 @@ public class TurmaService {
                     Set.of(turma.turno()),
                     turma.semestre()
             );
-            adicionarListaEspera(reAlocacao);
+            adicionarListaEspera(
+                    reAlocacao,
+                    null
+            );
         }
         turma.setQuantidadeAlunos(0);
         turmaRepository.save(turma);

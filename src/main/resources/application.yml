@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: ${SERVER_PORT:8085}
 
 spring:
   application:
@@ -31,4 +31,4 @@ eureka:
 app:
   services:
     ms-solicitacoes:
-      url: ${MS_SOLICITACOES_URL:http://localhost:8081}
+      url: ${MS_SOLICITACOES_URL:http://localhost:8084}
