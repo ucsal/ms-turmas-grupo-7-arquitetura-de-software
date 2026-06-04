@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record SolicitacaoResponseDTO(
-        Long id,
+        Long id ,
         Long alunoId,
         String semestre,
         LocalDateTime dataSolicitacao,

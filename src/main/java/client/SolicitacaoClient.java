@@ -1,7 +1,7 @@
 package client;
 
+import dto.AtualizarStatusRequestDTO;
 import dto.SolicitacaoResponseDTO;
-import entity.enums.StatusSolicitacao;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,14 +13,17 @@ import java.util.List;
 )
 public interface SolicitacaoClient {
 
-    @GetMapping("/api/solicitacoes/resultados")
-    List<SolicitacaoResponseDTO> obterTodasSolicitacoes(
-            @RequestHeader("X-User-Id") Long sysAdminId
+    @GetMapping("/api/solicitacoes/pendentes")
+    List<SolicitacaoResponseDTO> obterPendentes(
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Id") Long userId
     );
 
     @PatchMapping("/api/solicitacoes/{id}/status")
     void atualizarStatus(
             @PathVariable("id") Long id,
-            @RequestParam("status") StatusSolicitacao status
+            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody AtualizarStatusRequestDTO body
     );
 }

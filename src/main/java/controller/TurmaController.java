@@ -61,4 +61,24 @@ public class TurmaController {
         return ResponseEntity.ok(response);
     }
     
+    @PutMapping("/{id}")
+    public ResponseEntity<TurmaResponseDTO> atualizar(
+            @PathVariable Long id,
+            @RequestBody TurmaResponseDTO dto
+    ) {
+        return ResponseEntity.ok(
+                turmaService.atualizar(id, dto)
+        );
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(
+            @PathVariable Long id
+    ) {
+        turmaService.excluir(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    
+    
 }

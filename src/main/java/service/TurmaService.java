@@ -40,7 +40,11 @@ public class TurmaService {
 
     @Transactional
     public void processarFormacaoTurmas() {
-        List<SolicitacaoResponseDTO> solicitacoesGerais = solicitacaoClient.obterTodasSolicitacoes(999L);
+    	List<SolicitacaoResponseDTO> solicitacoesGerais =
+    	        solicitacaoClient.obterPendentes(
+    	                "ADMINISTRADOR",
+    	                1L
+    	        );
 
         if (solicitacoesGerais == null || solicitacoesGerais.isEmpty()) {
             return;
@@ -127,8 +131,7 @@ public class TurmaService {
                                 dema.solicitacaoId()
                         );
                     } else {
-                    	adicionarListaEspera(
-                    	        dema,
+                    	rejeitarSolicitacao(
                     	        dema.solicitacaoId()
                     	);
                     }
@@ -283,24 +286,16 @@ public class TurmaService {
 
         turmaRepository.save(turma);
 
-        try {
+        if (solicitacaoId != null) {
 
-        	if (solicitacaoId != null) {
-
-        	    solicitacaoClient.atualizarStatus(
-        	            solicitacaoId,
-        	            StatusSolicitacao.LISTA_DE_ESPERA
-        	    );
-
-        	}
-        	
-        } catch (Exception ex) {
-
-            System.out.println(
-                    "Erro ao atualizar status da solicitação "
-                            + solicitacaoId
+            solicitacaoClient.atualizarStatus(
+                    solicitacaoId,
+                    "ADMINISTRADOR",
+                    1L,
+                    new AtualizarStatusRequestDTO(
+                            StatusSolicitacao.VALIDADO.name()
+                    )
             );
-
         }
     }
     
@@ -338,26 +333,35 @@ public class TurmaService {
                 dema.disciplinaId()
         );
 
-        try {
+        if (solicitacaoId != null) {
 
-        	if (solicitacaoId != null) {
-
-        	    solicitacaoClient.atualizarStatus(
-        	            solicitacaoId,
-        	            StatusSolicitacao.VALIDADO
-        	    );
-
-        	}
-
-        } catch (Exception ex) {
-
-            System.out.println(
-                    "Erro ao atualizar status da solicitação "
-                            + solicitacaoId
+            solicitacaoClient.atualizarStatus(
+                    solicitacaoId,
+                    "ADMINISTRADOR",
+                    1L,
+                    new AtualizarStatusRequestDTO(
+                            StatusSolicitacao.LISTA_DE_ESPERA.name()
+                    )
             );
-
         }
     }
+    
+    private void rejeitarSolicitacao(Long solicitacaoId) {
+
+        if (solicitacaoId == null) {
+            return;
+        }
+
+        solicitacaoClient.atualizarStatus(
+                solicitacaoId,
+                "ADMINISTRADOR",
+                1L,
+                new AtualizarStatusRequestDTO(
+                        StatusSolicitacao.REJEITADO.name()
+                )
+        );
+    }
+    
 
     private void validarQuorumMinimo(Long disciplinaId) {
         List<Turma> turmasAtivas = turmaRepository.findByDisciplinaIdAndStatus(disciplinaId, StatusTurma.ABERTA);
