@@ -4,6 +4,7 @@ import dto.ListaEsperaResponseDTO;
 import dto.TurmaResponseDTO;
 import service.TurmaService;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,11 @@ public class TurmaController {
 
     public TurmaController(TurmaService turmaService) {
         this.turmaService = turmaService;
+    }
+
+    @PostMapping
+    public ResponseEntity<TurmaResponseDTO> criar(@RequestBody TurmaResponseDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(turmaService.criar(dto));
     }
 
     @PostMapping("/processar")

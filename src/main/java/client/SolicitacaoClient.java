@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(
-        name = "ms-solicitacoes",
-        url = "${app.services.ms-solicitacoes.url}"
-)
+@FeignClient(name = "ms-solicitacoes")
 public interface SolicitacaoClient {
 
     @GetMapping("/api/solicitacoes/pendentes")

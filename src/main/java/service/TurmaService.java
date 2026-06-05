@@ -220,6 +220,22 @@ public class TurmaService {
         );
     }
 
+    public TurmaResponseDTO criar(TurmaResponseDTO dto) {
+        Turma nova = new Turma(
+                null,
+                dto.disciplinaId(),
+                dto.professorId(),
+                dto.espacoId() != null ? dto.espacoId() : 1L,
+                dto.semestre(),
+                dto.turno() != null ? dto.turno() : TurnoEnum.MATUTINO,
+                dto.capacidadeMaxima() != null ? dto.capacidadeMaxima() : 20,
+                0,
+                StatusTurma.ABERTA
+        );
+        nova = turmaRepository.save(nova);
+        return buscarPorId(nova.id());
+    }
+
     public TurmaResponseDTO atualizar(
             Long id,
             TurmaResponseDTO dto
